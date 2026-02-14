@@ -29,10 +29,6 @@ import type {
     TooltipComponentOption,
 } from 'echarts';
 
-const lastDay = new Date();
-const lastMonthDays = Array.from({ length: 30 }, (_, i) => subDays(lastDay, i));
-const aMonthAgo = subDays(new Date(), 30);
-
 // Create an Option type with only the required components and charts via ComposeOption
 type ECOption = echarts.ComposeOption<
     | LineSeriesOption
@@ -72,16 +68,23 @@ const aggregateOrdersByDay = (orders: Order[]): { [key: string]: number } =>
             {} as { [key: string]: number }
         );
 
-const getRevenuePerDay = (orders: Order[]): TotalByDay[] => {
+const getRevenuePerDay = (
+    orders: Order[],
+    periodInDays: number
+): TotalByDay[] => {
     const daysWithRevenue = aggregateOrdersByDay(orders);
-    return lastMonthDays.map(date => ({
+    const lastDays = Array.from({ length: periodInDays }, (_, i) =>
+        subDays(new Date(), i)
+    );
+
+    return lastDays.map(date => ({
         date: date.getTime(),
         total: daysWithRevenue[format(date, 'yyyy-MM-dd')] || 0,
     }));
 };
 
-const OrderChart = (props: { orders?: Order[] }) => {
-    const { orders } = props;
+const OrderChart = (props: { orders?: Order[]; periodInDays: number }) => {
+    const { orders, periodInDays } = props;
     const chartRef = React.useRef<HTMLDivElement>(null);
     const chartInstance = React.useRef<echarts.ECharts | null>(null);
 
@@ -93,13 +96,14 @@ const OrderChart = (props: { orders?: Order[] }) => {
                 chartInstance.current = echarts.init(chartRef.current);
             }
 
-            const revenueData = getRevenuePerDay(orders);
+            const periodStart = subDays(new Date(), periodInDays);
+            const revenueData = getRevenuePerDay(orders, periodInDays);
 
             // Configure the chart
             const option: ECOption = {
                 xAxis: {
                     type: 'time',
-                    min: addDays(aMonthAgo, 1).getTime(),
+                    min: addDays(periodStart, 1).getTime(),
                     max: new Date().getTime(),
                     axisLabel: {
                         formatter: (value: number) => dateFormatter(value),
@@ -196,7 +200,7 @@ const OrderChart = (props: { orders?: Order[] }) => {
             chartInstance.current?.dispose();
             chartInstance.current = null;
         };
-    }, [orders]);
+    }, [orders, periodInDays]);
 
     return <div ref={chartRef} style={{ width: '100%', height: 300 }} />;
 };

@@ -15,6 +15,9 @@ const customFrenchMessages: TranslationMessages = {
         dashboard: {
             monthly_revenue: 'CA à 30 jours',
             month_history: "Chiffre d'affaire sur 30 jours",
+            revenue_history:
+                "Chiffre d'affaire sur %{smart_count} jours |||| Chiffre d'affaire sur %{smart_count} jours",
+            duration: 'Durée',
             new_orders: 'Nouvelles commandes',
             pending_reviews: 'Commentaires à modérer',
             all_reviews: 'Voir tous les commentaires',
