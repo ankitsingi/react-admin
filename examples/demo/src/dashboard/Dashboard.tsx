@@ -7,6 +7,12 @@ import {
     Card,
     CardHeader,
     CardContent,
+    Box,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    SelectChangeEvent,
 } from '@mui/material';
 import { subDays, startOfDay } from 'date-fns';
 
@@ -46,18 +52,26 @@ const VerticalSpacer = () => <span style={{ height: '1em' }} />;
 const OrderChart = React.lazy(() => import('./OrderChart'));
 
 const Dashboard = () => {
+    const [historyDuration, setHistoryDuration] = React.useState(30);
     const isXSmall = useMediaQuery((theme: Theme) =>
         theme.breakpoints.down('sm')
     );
     const isSmall = useMediaQuery((theme: Theme) =>
         theme.breakpoints.down('lg')
     );
-    const aMonthAgo = useMemo(() => subDays(startOfDay(new Date()), 30), []);
+    const sinceDate = useMemo(
+        () => subDays(startOfDay(new Date()), historyDuration),
+        [historyDuration]
+    );
+
+    const handleHistoryDurationChange = (event: SelectChangeEvent<number>) => {
+        setHistoryDuration(Number(event.target.value));
+    };
 
     const { data: orders } = useGetList<Order>('orders', {
-        filter: { date_gte: aMonthAgo.toISOString() },
+        filter: { date_gte: sinceDate.toISOString() },
         sort: { field: 'date', order: 'DESC' },
-        pagination: { page: 1, perPage: 50 },
+        pagination: { page: 1, perPage: 200 },
     });
 
     const aggregation = useMemo<State>(() => {
@@ -120,12 +134,37 @@ const Dashboard = () => {
                 <Card>
                     <CardHeader
                         title={
-                            <Translate i18nKey="pos.dashboard.month_history" />
+                            <Translate
+                                i18nKey="pos.dashboard.revenue_history"
+                                options={{ smart_count: historyDuration }}
+                            />
+                        }
+                        action={
+                            <Box sx={{ minWidth: 120, mt: 1 }}>
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel id="history-duration-select-label">
+                                        <Translate i18nKey="pos.dashboard.duration" />
+                                    </InputLabel>
+                                    <Select
+                                        labelId="history-duration-select-label"
+                                        value={historyDuration}
+                                        label="Duration"
+                                        onChange={handleHistoryDurationChange}
+                                    >
+                                        <MenuItem value={30}>30 Days</MenuItem>
+                                        <MenuItem value={60}>60 Days</MenuItem>
+                                        <MenuItem value={90}>90 Days</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Box>
                         }
                     />
                     <CardContent>
                         <Suspense fallback={<Skeleton height={300} />}>
-                            <OrderChart orders={recentOrders} />
+                            <OrderChart
+                                orders={recentOrders}
+                                periodInDays={historyDuration}
+                            />
                         </Suspense>
                     </CardContent>
                 </Card>
@@ -148,12 +187,47 @@ const Dashboard = () => {
                         <Card>
                             <CardHeader
                                 title={
-                                    <Translate i18nKey="pos.dashboard.month_history" />
+                                    <Translate
+                                        i18nKey="pos.dashboard.revenue_history"
+                                        options={{
+                                            smart_count: historyDuration,
+                                        }}
+                                    />
+                                }
+                                action={
+                                    <Box sx={{ minWidth: 120, mt: 1 }}>
+                                        <FormControl size="small" fullWidth>
+                                            <InputLabel id="history-duration-select-label-large">
+                                                <Translate i18nKey="pos.dashboard.duration" />
+                                            </InputLabel>
+                                            <Select
+                                                labelId="history-duration-select-label-large"
+                                                value={historyDuration}
+                                                label="Duration"
+                                                onChange={
+                                                    handleHistoryDurationChange
+                                                }
+                                            >
+                                                <MenuItem value={30}>
+                                                    30 Days
+                                                </MenuItem>
+                                                <MenuItem value={60}>
+                                                    60 Days
+                                                </MenuItem>
+                                                <MenuItem value={90}>
+                                                    90 Days
+                                                </MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Box>
                                 }
                             />
                             <CardContent>
                                 <Suspense fallback={<Skeleton height={300} />}>
-                                    <OrderChart orders={recentOrders} />
+                                    <OrderChart
+                                        orders={recentOrders}
+                                        periodInDays={historyDuration}
+                                    />
                                 </Suspense>
                             </CardContent>
                         </Card>
